@@ -64,7 +64,6 @@ def load_matricies(data):
 
 	return adjacency_substituted
 
-
 adjacency_substituted = load_matricies(data['smiles'])
 
 
