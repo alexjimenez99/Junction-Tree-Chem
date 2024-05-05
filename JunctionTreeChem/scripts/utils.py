@@ -1,24 +1,15 @@
-import time
-import sys
-import pickle
 import numpy      as np
 import pandas     as pd
-import matplotlib.pyplot as plt
-import seaborn    as sns
 import networkx   as nx 
 import re
-import psutil
 import copy
-import os
-import random
 
-from   zipfile      import ZipFile
 from   collections  import Counter
 from   rdkit        import Chem
-from   rdkit.Chem   import FunctionalGroups
 from   tqdm         import tqdm
 
-from vocabulary import tokenize_dict
+# Changed due to AWS relative paths
+from JunctionTree.vocabulary import tokenize_dict
 
 
 
@@ -241,7 +232,7 @@ def construct_junction_tree(V, v1, i):
     for cluster in V:
         junction_tree.add_node(cluster)
 
-     # Add edges between clusters that share junction atoms
+    # Add edges between clusters that share junction atoms
     # Finds the shared atoms for Nodes
     for cluster1 in junction_tree.nodes():
         for cluster2 in junction_tree.nodes():
@@ -260,13 +251,17 @@ def construct_junction_tree(V, v1, i):
                 else:
                   shared_atoms = set(cluster1).intersection(set(cluster2))
 
-                 # Conditions to check for consecutive v1 bonds... (1,2) should be connected to (2, 4)
-                if shared_atoms is not None and len(shared_atoms) > 0:
-                  contains_index = any(list(shared_atoms) in tup for tup in list(v1[i]))
-                  v1_bonds       = True in [list(shared_atoms)[0] in tup for tup in list(v1[i])]
+                # Conditions to check for consecutive v1 bonds... (1,2) should be connected to (2, 4)
+#                 if shared_atoms is not None and len(shared_atoms) > 0:
+#                   contains_index = any(list(shared_atoms) in tup for tup in list(v1[i]))
+#                   v1_bonds       = True in [list(shared_atoms)[0] in tup for tup in list(v1[i])]
 
                 if shared_atoms:
                     junction_tree.add_edge(cluster1, cluster2, weight=1)
+            
+            elif cluster1 == cluster2:
+                junction_tree.add_edge(cluster1, cluster2, weight = 1)
+                
     
     
     return junction_tree
@@ -760,7 +755,8 @@ def build_unique_vocabulary(vocabulary, zinc_data, unique_vocab, molecule_df):
  
       if atoms not in unique_vocab:
         unique_vocab      = tokenize_dict(atoms, unique_vocab)
-        vocabulary_token  = unique_vocab[atoms]
+#         vocabulary_token  = unique_vocab[atoms]
+        vocabulary_token  = None
      
         if include_valency:
             valency_dict[atoms] = []
@@ -795,20 +791,25 @@ def substitute_vocabulary(adjacency_matricies, token_dictionary):
       
       
   '''
+  none_token = len(list(token_dictionary.keys())) + 1
+# #   print(adjacency_matricies.shape)
   for index, atoms in tqdm(token_dictionary.items(), total = len(list(token_dictionary.values()))):
-      list_index = 0
-    
+        
       matrix     = adjacency_matricies[index]
       for i in range(len(matrix)):
         for j in range(len(matrix)):
 #             print(adjacency_matricies[index][i][j])
             if matrix[i][j] != 0:
-#                 print(atoms, list_index, matrix.shape)
                 atom_conversion                  = atoms[j]
-                adjacency_matricies[index][i][j] = atom_conversion
-                list_index += 1
-        
+                
+               # Placeholder for now 04May2024
+                if atom_conversion is None:
+                    atom_conversion = none_token
 
+                adjacency_matricies[index][i][j] = atom_conversion
+    
+            
+                
   return np.array(adjacency_matricies)
 
 
